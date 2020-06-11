@@ -6,7 +6,7 @@
 <script type="text/javascript">
           var ws = new WebSocket("ws://127.0.0.1:8080/chat");
           ws.onmessage = function(e) {
-              $("#contents").append('<div class="alert alert-info" role="alert" style="float: left;">' + "机器人: " + e.data + "</div><br><br><br><br>");
+              $("#contents").append('<div id="reply" class="alert alert-info" role="alert" style="float: left;">' + "NLPartners: " + e.data + "</div><br><br><br><br>");
           }
           function sendMsg() {
               var msg = $("#msg").val();
@@ -14,7 +14,14 @@
               ws.send(msg);
               $("#msg").val("");
           }
-
+</script>
+<script language="javascript1.2" type="text/javascript">
+function onGetMessage(context)
+{
+contents.innerHTML+=context;
+msg_end.scrollIntoView();
+reply.scrollIntoView();
+}
 </script>
 {% endblock %}
 
@@ -34,10 +41,14 @@
             </nav>
 
             <div class="container theme-showcase" role="main" style="margin-top: 80px;">
-                <div id="contents" style="height: 600px; overflow: auto; background-color:#eee;"></div>
+                <div style="height: 600px; overflow: auto; background-color:#eee;">
+                    <div id="contents" style="overflow:hidden;"></div>
+                    <div id="msg_end" style="height:0px; overflow:hidden"></div>
+                </div>
                 <div>
                     <textarea class="form-control" id="msg"></textarea>
-                    <button class="btn btn-lg btn-info" onclick="sendMsg()" style="float: right;">发送</button>
+                    <button class="btn btn-lg btn-info" onclick="sendMsg()" style="float: right;margin-top: 2px">发送
+                    </button>
                 </div>
             </div>
         </div>
