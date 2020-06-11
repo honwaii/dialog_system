@@ -75,6 +75,13 @@ def search_word(sentence, stop_words, word_dict):
     return result
 
 
+def get_answer(content):
+    if content is None or len(content) <= 1:
+        return "你可真是言简意赅, 臣妾不懂啊！ "
+    indexes = search_word(content, stop_words, word_dict)
+    if indexes is None or len(indexes) <= 0:
+        return "你可说的超出我的理解范围了, 请你想想组织好话后再说好吗？"
+    return answer[indexes[0]]
+
+
 word_dict, stop_words, answer = load_data()
-r = search_word('请问你找谁？', stop_words, word_dict)
-print(answer[r[0]])

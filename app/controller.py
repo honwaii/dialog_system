@@ -4,11 +4,43 @@
 # @Author  : honwaii
 # @Email   : honwaii@126.com
 # @File    : controller.py
-from flask import render_template, Flask
+import sanic
+from jinja2 import Environment, PackageLoader
+from sanic import Sanic
+from sanic.exceptions import NotFound
+from sanic.response import html
+from sanic.websocket import WebSocketProtocol
 
-app = Flask(__name__)
+from app.service import data_handler
+
+env = Environment(loader=PackageLoader('app', 'templates'))
+
+app = Sanic(__name__)
 
 
-@app.route("/", methods=['POST', 'GET'])
-def index():
-    return render_template('index.html')
+@app.route('/')
+async def index(request):
+    template = env.get_template('index.html')
+    html_content = template.render(title='在线陪你聊天呀')
+    return html(html_content)
+
+
+@app.websocket('/chat')
+async def chat(request, ws):
+    while True:
+        msg = await ws.recv()
+        print('Received: ' + msg)
+        # intelligence_data = {"key": "free", "appid": 0, "msg": user_msg}
+        # r = httpx.get("http://api.qingyunke.com/api.php", params=intelligence_data)
+        # chat_msg = r.json()["content"]
+        reply = data_handler.get_answer(msg)
+        print('Sending: ' + reply)
+        await ws.send(reply)
+
+
+if __name__ == "__main__":
+    app.error_handler.add(
+        NotFound,
+        lambda r, e: sanic.response.empty(status=404)
+    )
+    app.run(host="127.0.0.1", port=8080, protocol=WebSocketProtocol, debug=True)
