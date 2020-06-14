@@ -54,8 +54,8 @@ def search_word(sentence, stop_words, word_dict):
     words = jieba.lcut(sentence)
     temp = []
     for each in words:
-        if each in stop_words:
-            continue
+        # if each in stop_words:
+        #     continue
         word_in_doc = word_dict.get(each)
         if word_in_doc is None:
             continue
@@ -66,12 +66,10 @@ def search_word(sentence, stop_words, word_dict):
     if len(temp) == 1:
         return temp[0]
     result = []
-    print(temp)
     for i in range(len(temp) - 1):
         if i == 0:
             result = temp[i]
         result = list(set(result).intersection(set(temp[i + 1])))
-        print(result)
     return result
 
 
@@ -80,7 +78,7 @@ def get_answer(content):
         return "你可真是言简意赅, 臣妾不懂啊！ "
     indexes = search_word(content, stop_words, word_dict)
     if indexes is None or len(indexes) <= 0:
-        return "你可说的超出我的理解范围了, 请你想想组织好话后再说好吗？"
+        return "你可说的超出我的理解范围了, 请想想再说吧！"
     return answer[indexes[0]]
 
 
