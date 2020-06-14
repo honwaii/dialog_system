@@ -10,7 +10,9 @@ from sanic import Sanic
 from sanic.exceptions import NotFound
 from sanic.response import html
 from sanic.websocket import WebSocketProtocol
+import sys
 
+sys.path.append("~/dialog_system")
 from app.service import data_handler
 
 env = Environment(loader=PackageLoader('app', 'templates'))
