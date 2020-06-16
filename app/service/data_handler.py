@@ -5,6 +5,7 @@
 # @Email   : honwaii@126.com
 # @File    : data_handler.py
 from collections import defaultdict
+from functools import reduce
 
 import pandas as pd
 from app.util.cfg_operator import config
@@ -12,7 +13,7 @@ import jieba
 
 
 def load_data():
-    path = config.get_config('data_path')
+    path = config.get_config('train_data_path')
     data = pd.read_csv(path, encoding='utf-8')
     questions = data.get('question')
     answer = data.get('answer')
@@ -20,12 +21,28 @@ def load_data():
     word_dict = defaultdict()
     for each in range(len(questions)):
         try:
-            generate_index_dict(questions[each], each, stop_words, word_dict)
-            # generate_index_dict(answer[each], each, stop_words, word_dict)
+            generate_index_dict(questions[each] + '，' + answer[each], each, stop_words, word_dict)
         except Exception:
             print(each)
             print(questions[each])
     return word_dict, stop_words, answer
+
+
+def handle_corpus():
+    path = config.get_config('train_data_path')
+    data = pd.read_csv(path, encoding='utf-8')
+    questions = data.get('question')
+    answer = data.get('answer')
+    corpus = []
+    for each in range(len(questions)):
+        try:
+            words = jieba.lcut(questions[each] + '，' + answer[each])
+            sen = reduce(lambda x, y: x + ' ' + y, words)
+            corpus.append(sen)
+        except Exception:
+            print(each)
+            print(questions[each])
+    return corpus
 
 
 def load_stop_words():
@@ -79,7 +96,27 @@ def get_answer(content):
     indexes = search_word(content, stop_words, word_dict)
     if indexes is None or len(indexes) <= 0:
         return "你可说的超出我的理解范围了, 请想想再说吧！"
+
     return answer[indexes[0]]
 
+
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+
+
+def rank_answer(sentences):
+    corpus = handle_corpus()
+    vectorizer = CountVectorizer()
+    X = vectorizer.fit_transform(corpus)
+    word = vectorizer.get_feature_names()
+    # 类调用
+    transformer = TfidfTransformer()
+    print(transformer)
+    tf_idf = transformer.fit_transform(X)
+    print(tf_idf)
+    return
+
+
+rank_answer('')
 
 word_dict, stop_words, answer = load_data()
