@@ -4,6 +4,7 @@
 # @Author  : honwaii
 # @Email   : honwaii@126.com
 # @File    : data_handler.py
+import re
 from collections import defaultdict
 from functools import reduce
 
@@ -31,13 +32,21 @@ def load_data():
 def handle_corpus():
     path = config.get_config('train_data_path')
     data = pd.read_csv(path, encoding='utf-8')
+    print(data.shape)
     questions = data.get('question')
     answer = data.get('answer')
     corpus = []
     for each in range(len(questions)):
         try:
             words = jieba.lcut(questions[each] + '，' + answer[each])
-            sen = reduce(lambda x, y: x + ' ' + y, words)
+            temp = []
+            for word in words:
+                w = re.match('[\u4e00-\u9fa5]', word, False)
+                if w is not None:
+                    temp.append(w.string)
+            if len(temp) <= 0:
+                continue
+            sen = reduce(lambda x, y: x + ' ' + y, temp)
             corpus.append(sen)
         except Exception:
             print(each)
@@ -106,14 +115,24 @@ from sklearn.feature_extraction.text import TfidfTransformer
 
 def rank_answer(sentences):
     corpus = handle_corpus()
+    print(len(corpus))
     vectorizer = CountVectorizer()
     X = vectorizer.fit_transform(corpus)
     word = vectorizer.get_feature_names()
     # 类调用
+    print(len(word))
+    print(len(word[0]))
+    print(word[0])
+    print(word[1])
     transformer = TfidfTransformer()
     print(transformer)
     tf_idf = transformer.fit_transform(X)
-    print(tf_idf)
+    print(tf_idf[1])
+    print(tf_idf[1].data[0])
+    print(tf_idf[1].indices[0])
+    for i in range(0, 5):
+        print(word[tf_idf[1].indices[i]])
+
     return
 
 
