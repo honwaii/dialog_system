@@ -4,6 +4,10 @@
 # @Author  : honwaii
 # @Email   : honwaii@126.com
 # @File    : dataset_handler.py
+import re
+
+import jieba
+
 from app.util.cfg_operator import config
 import pandas as pd
 
@@ -19,4 +23,35 @@ def split_dataset():
     test_data.to_csv("../datas/test_data.csv", index=False)
     return
 
-split_dataset()
+
+def clean_data(input_path, out_path):
+    data = pd.read_csv(input_path, encoding='utf-8')
+    print(data.shape)
+    questions = data.get('question')
+    answer = data.get('answer')
+    q = []
+    a = []
+    for each in range(len(questions)):
+        try:
+            words = jieba.lcut(questions[each] + '，' + answer[each])
+            for word in words:
+                w = re.match('[\u4e00-\u9fa5]', word, False)
+                if w is None:
+                    print(questions[each])
+                    continue
+                q.append(questions[each])
+                a.append(answer[each])
+                break
+        except Exception:
+            print(questions[each])
+    name = ['question', 'answer']
+    data_set = [q, a]
+    print(len(q))
+    print(len(a))
+    cleaned_data = pd.DataFrame(columns=name, data=data_set)  # 数据有三列，列名分别为one,two,three
+    cleaned_data.to_csv(out_path, encoding='utf-8')
+    return
+
+
+# split_dataset()
+clean_data('../datas/train_data.csv', '../datas/cleaned_train_data.csv')

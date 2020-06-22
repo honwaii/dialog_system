@@ -7,10 +7,12 @@
 import re
 from collections import defaultdict
 from functools import reduce
-
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
 import pandas as pd
 from app.util.cfg_operator import config
 import jieba
+import numpy as np
 
 
 def load_data():
@@ -26,27 +28,26 @@ def load_data():
         except Exception:
             print(each)
             print(questions[each])
-    return word_dict, stop_words, answer
+    return word_dict, stop_words, answer, questions
 
 
 def handle_corpus():
     path = config.get_config('train_data_path')
     data = pd.read_csv(path, encoding='utf-8')
-    print(data.shape)
     questions = data.get('question')
     answer = data.get('answer')
     corpus = []
     for each in range(len(questions)):
         try:
             words = jieba.lcut(questions[each] + '，' + answer[each])
-            temp = []
-            for word in words:
-                w = re.match('[\u4e00-\u9fa5]', word, False)
-                if w is not None:
-                    temp.append(w.string)
-            if len(temp) <= 0:
-                continue
-            sen = reduce(lambda x, y: x + ' ' + y, temp)
+            # temp = []
+            # for word in words:
+            #     w = re.match('[\u4e00-\u9fa5]', word, False)
+            #     if w is not None:
+            #         temp.append(w.string)
+            # if len(temp) <= 0:
+            #     continue
+            sen = reduce(lambda x, y: x + ' ' + y, words)
             corpus.append(sen)
         except Exception:
             print(each)
@@ -65,8 +66,12 @@ def load_stop_words():
 
 def generate_index_dict(doc, index, stop_words, word_dict):
     item = jieba.lcut(doc)
+    # index = len(word_dict)
     for each in item:
-        if each in stop_words:
+        # if each in stop_words:
+        #     continue
+        w = re.match('[\u4e00-\u9fa5]', each, False)
+        if w is None:
             continue
         temp = word_dict.get(each)
         if temp is not None:
@@ -78,12 +83,14 @@ def generate_index_dict(doc, index, stop_words, word_dict):
 
 def search_word(sentence, stop_words, word_dict):
     words = jieba.lcut(sentence)
+    print('words:{}'.format(words))
     temp = []
     for each in words:
         # if each in stop_words:
         #     continue
         word_in_doc = word_dict.get(each)
         if word_in_doc is None:
+            print("未找到词:" + each)
             continue
         temp.append(word_in_doc)
     if len(temp) <= 0:
@@ -103,39 +110,41 @@ def get_answer(content):
     if content is None or len(content) <= 1:
         return "你可真是言简意赅, 臣妾不懂啊！ "
     indexes = search_word(content, stop_words, word_dict)
+    print('searched indexes:\n{}'.format(indexes))
     if indexes is None or len(indexes) <= 0:
-        return "你可说的超出我的理解范围了, 请想想再说吧！"
-
-    return answer[indexes[0]]
-
-
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer
+        return "你可说的超出我的理解范围了！"
+    ranked = rank_answer(indexes)
+    for i in ranked:
+        print(questions[i] + ':' + answer[i])
+    return answer[ranked[0]]
 
 
-def rank_answer(sentences):
+def train_vector():
     corpus = handle_corpus()
-    print(len(corpus))
-    vectorizer = CountVectorizer()
-    X = vectorizer.fit_transform(corpus)
-    word = vectorizer.get_feature_names()
-    # 类调用
-    print(len(word))
-    print(len(word[0]))
-    print(word[0])
-    print(word[1])
+    vector = CountVectorizer()
+    X = vector.fit_transform(corpus)
+    word = vector.get_feature_names()
     transformer = TfidfTransformer()
-    print(transformer)
     tf_idf = transformer.fit_transform(X)
-    print(tf_idf[1])
-    print(tf_idf[1].data[0])
-    print(tf_idf[1].indices[0])
-    for i in range(0, 5):
-        print(word[tf_idf[1].indices[i]])
-
-    return
+    return word, tf_idf, X, corpus
 
 
-rank_answer('')
+def rank_answer(indexes):
+    # 获取句子的向量，第i个句子的索引，找到对应句子的向量
+    max_idf = 0
+    index = []
+    for i in indexes:
+        size = len(list(tf_idf[i].data))
+        if size <= 0:
+            continue
+        avg_idf = np.average(tf_idf[i].data)
+        if avg_idf > max_idf:
+            max_idf = avg_idf
+            index.clear()
+        if avg_idf == max_idf:
+            index.append(i)
+    return index
 
-word_dict, stop_words, answer = load_data()
+
+word, tf_idf, X, corpus = train_vector()
+word_dict, stop_words, answer, questions = load_data()
