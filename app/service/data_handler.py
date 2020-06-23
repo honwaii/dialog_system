@@ -7,6 +7,8 @@
 import re
 from collections import defaultdict
 from functools import reduce
+
+import httpx
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 import pandas as pd
@@ -24,7 +26,7 @@ def load_data():
     word_dict = defaultdict()
     for each in range(len(questions)):
         try:
-            generate_index_dict(questions[each] + '，' + answer[each], each, stop_words, word_dict)
+            generate_index_dict(questions[each], each, stop_words, word_dict)
         except Exception:
             print(each)
             print(questions[each])
@@ -66,7 +68,7 @@ def load_stop_words():
 
 def generate_index_dict(doc, index, stop_words, word_dict):
     item = jieba.lcut(doc)
-    # index = len(word_dict)
+
     for each in item:
         # if each in stop_words:
         #     continue
@@ -84,10 +86,15 @@ def generate_index_dict(doc, index, stop_words, word_dict):
 def search_word(sentence, stop_words, word_dict):
     words = jieba.lcut(sentence)
     print('words:{}'.format(words))
-    temp = []
+    temp_word = []
     for each in words:
-        # if each in stop_words:
-        #     continue
+        if each in stop_words:
+            continue
+        temp_word.append(each)
+    if len(temp_word) < 2:
+        temp_word = words
+    temp = []
+    for each in temp_word:
         word_in_doc = word_dict.get(each)
         if word_in_doc is None:
             print("未找到词:" + each)
@@ -112,7 +119,10 @@ def get_answer(content):
     indexes = search_word(content, stop_words, word_dict)
     print('searched indexes:\n{}'.format(indexes))
     if indexes is None or len(indexes) <= 0:
-        return "你可说的超出我的理解范围了！"
+        intelligence_data = {"key": "free", "appid": 0, "msg": content}
+        r = httpx.get("http://api.qingyunke.com/api.php", params=intelligence_data)
+        response = r.json()["content"]
+        return response
     ranked = rank_answer(indexes)
     for i in ranked:
         print(questions[i] + ':' + answer[i])

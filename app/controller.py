@@ -32,9 +32,6 @@ async def chat(request, ws):
     while True:
         msg = await ws.recv()
         print('Received: ' + msg)
-        # intelligence_data = {"key": "free", "appid": 0, "msg": user_msg}
-        # r = httpx.get("http://api.qingyunke.com/api.php", params=intelligence_data)
-        # chat_msg = r.json()["content"]
         reply = data_handler.get_answer(msg)
         print('Sending: ' + reply)
         await ws.send(reply)
