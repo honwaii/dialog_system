@@ -83,13 +83,13 @@ def generate_index_dict(doc, index, stop_words, word_dict):
 
 def search_word(sentence, stop_words, word_dict):
     words = jieba.lcut(sentence)
-    print('words:{}'.format(words))
+    # print('words:{}'.format(words))
     temp_word = []
     for each in words:
         if each in stop_words:
             continue
         temp_word.append(each)
-    if len(temp_word) < 2:
+    if len(temp_word) < 1:
         temp_word = words
     temp = []
     for each in temp_word:
@@ -116,7 +116,7 @@ def train_vector():
     vector = CountVectorizer()
     X = vector.fit_transform(corpus)
     word = vector.get_feature_names()
-    transformer = TfidfTransformer()
+    transformer = TfidfTransformer(use_idf=True)
     tf_idf = transformer.fit_transform(X)
     return word, tf_idf, X, corpus
 
@@ -140,3 +140,7 @@ def rank_answer(indexes):
 
 word, tf_idf, X, corpus = train_vector()
 word_dict, stop_words, answer, questions = load_data()
+
+
+def generation_model():
+    return
