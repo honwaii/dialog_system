@@ -1,5 +1,5 @@
 sanic==20.3.0
-jinja2==2.10.3
+jinja2==2.11.3
 numpy==1.18.1
 jieba==0.42.1
 pandas==0.25.3
